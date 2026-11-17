@@ -89,3 +89,41 @@ def test_retry_after_accepts_http_date_and_bounds_provider_delay():
     now = datetime(2026, 11, 17, tzinfo=timezone.utc)
     assert retry_delay(httpx.Headers({"Retry-After": "Tue, 17 Nov 2026 00:00:20 GMT"}), 0, now) == 20
     assert retry_delay(httpx.Headers({"Retry-After": "600"}), 0, now) is None
+
+
+@pytest.mark.parametrize("executed", [False, True])
+def test_chain_validity_requires_a_successful_training_execution(tmp_path, monkeypatch, executed):
+    import runpy
+    import sys
+    from pathlib import Path
+    from types import SimpleNamespace
+
+    template = Path(__file__).parents[1] / "master_api/src/folder_constructor/validate_templates/chain/validate.py"
+    module_path = tmp_path / "validate.py"
+    module_path.write_text(
+        template.read_text()
+        .replace("${fitness_mode}", "accuracy")
+        .replace("${validation_type}", "Binary (0/1)")
+        .replace("${metric}", "equality")
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "helper",
+        SimpleNamespace(
+            parse_chain_config_json=json.loads,
+            execute_chain_on_dataset=lambda *_: [
+                {"prediction": "", "ground_truth": "blue", "success": executed, "time": 0.0},
+            ],
+            _extract_numeric_answer=lambda _: None,
+            _extract_prediction=lambda text: text,
+        ),
+    )
+    monkeypatch.setitem(sys.modules, "feedback_integration", None)
+    monkeypatch.setenv("PROBLEM_DIR", str(tmp_path))
+    monkeypatch.chdir(tmp_path)
+    validate = runpy.run_path(str(module_path))["validate"]
+    metrics, _ = validate(
+        {"train_dataset": [1], "val_dataset": [], "target_column": "expected"},
+        {"chain_config_json": "{}"},
+    )
+    assert metrics["is_valid"] == float(executed)

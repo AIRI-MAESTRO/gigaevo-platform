@@ -729,7 +729,7 @@ def validate(context, outputs) -> Dict[str, float]:
     success_flags = [1.0 if r.get("success") else 0.0 for r in all_results]
     success_rate = float(mean(success_flags)) if success_flags else 0.0
 
-    is_valid = 1.0 if (all_results and fitness >= 0.0) else 0.0
+    is_valid = float(fitness >= 0.0 and any(row.get("success") for row in train_results))
 
     # 1) Always build the BASIC feedback (guaranteed, no external deps)
     print(f"[Chain Feedback] Building feedback: {len(train_results)} train results, fitness={fitness:.4f}", file=sys.stderr)

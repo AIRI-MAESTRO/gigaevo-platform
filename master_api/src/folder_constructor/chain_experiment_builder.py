@@ -682,9 +682,9 @@ def _get_fallback_documentation() -> str:
       - "tool_name" (str): Name of the registered tool (e.g., "my_evaluator")
       - "tool_description" (str): Brief description of what the tool does
       - "input_mapping" (dict): Maps tool arguments to context variables. Keys are tool parameter names,
-        values are references like "@1.output" (output from step 1), "@context.field_name" (from context),
-        or literal values. Example: {"prompt_text": "@1.output", "threshold": "@2.output", 
-        "image_path": "@context.image_path"}
+        values are references like "$history[0]" (output from the first step) or
+        "$sample.field_name" (from the current CSV row). Example: {"prompt_text": "$history[0]",
+        "image_path": "$sample.image_path"}
       - "timeout" (int, optional): Maximum execution time in seconds (default: 120)
     
     For TRANSFORM steps (step_type="TRANSFORM"), the following fields are REQUIRED:
@@ -818,6 +818,15 @@ def build_chain_experiment(
         metric = continuous_metric
 
     carl_types_documentation = get_carl_types_documentation()
+    carl_types_documentation += """
+
+Platform evaluation uses only llm and tool steps. For tool input_mapping use:
+- "$sample.field_name" for a field in the current CSV row.
+- "$outer_context" for the rendered sample context.
+- "$history[-1]" for the last completed step, or "$history[0]" for the first.
+Every history reference must point to a previously executed step. These rules
+take precedence over the generic CARL schema for this experiment.
+"""
 
     step_type_documentation = ""
     if evolution_mode == "single_step" and target_step:
