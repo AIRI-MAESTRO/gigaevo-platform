@@ -13,8 +13,9 @@ from dataclasses import dataclass
 from typing import Any
 
 import httpx
-from openai import AsyncOpenAI
-from tenacity import retry, stop_after_attempt, wait_exponential
+from common.llm_rate_limit import RateLimitedAsyncClient
+from openai import AsyncOpenAI, RateLimitError
+from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_exponential
 
 
 @dataclass
@@ -36,7 +37,8 @@ def get_async_client(
     return AsyncOpenAI(
         api_key=api_key or os.environ.get("OPENAI_API_KEY", "None"),
         base_url=base_url,
-        http_client=httpx.AsyncClient(
+        max_retries=0,
+        http_client=RateLimitedAsyncClient(
             verify=verify_ssl,
             limits=httpx.Limits(
                 max_connections=300,
@@ -115,6 +117,7 @@ class LLMClient:
         return total_cost, utilization
 
     @retry(
+        retry=retry_if_not_exception_type(RateLimitError),
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=0.1, min=0.1, max=2),
     )

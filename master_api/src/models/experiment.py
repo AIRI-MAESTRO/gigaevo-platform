@@ -100,6 +100,7 @@ class PromptExperimentCreate(BaseModel):
         0.2, ge=0.0, le=1.0, description="Fraction of dataset to use for testing (0.0-1.0)"
     )
     enable_memory: Optional[bool] = Field(False, description="Enable memory card retrieval during evolution mutations")
+    memory_query: Optional[str] = Field(None, min_length=1, max_length=500, description="Optional IdeaL search query")
     memory_namespace: Optional[str] = Field(
         None, description="Optional memory namespace to share retrieval/write-back across experiments"
     )
@@ -191,6 +192,7 @@ class ChainExperimentCreate(BaseModel):
         None, ge=1, description="Step number to evolve (1-based, only for single_step mode)"
     )
     enable_memory: Optional[bool] = Field(False, description="Enable memory card retrieval during evolution mutations")
+    memory_query: Optional[str] = Field(None, min_length=1, max_length=500, description="Optional IdeaL search query")
     memory_namespace: Optional[str] = Field(
         None, description="Optional memory namespace to share retrieval/write-back across experiments"
     )
@@ -265,6 +267,7 @@ class CARLChainExperimentCreate(BaseModel):
         description="Validation criteria for fitness evaluation",
     )
     enable_memory: Optional[bool] = Field(False, description="Enable memory card retrieval during evolution mutations")
+    memory_query: Optional[str] = Field(None, min_length=1, max_length=500, description="Optional IdeaL search query")
     memory_namespace: Optional[str] = Field(None, description="Memory namespace (remote memory bank name for API mode)")
 
 

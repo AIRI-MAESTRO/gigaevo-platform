@@ -307,24 +307,6 @@ class GigaEvolveService:
         if base_url:
             env["OPENAI_BASE_URL"] = base_url
 
-    def _memory_hydra_override(self) -> str:
-        """
-        Select the Hydra override syntax accepted by the baked gigaevo-core config.
-
-        Some core branches include `memory: none` in config defaults, which expects
-        `memory=api`. The current core-internal branch used here omits the memory
-        group from defaults entirely, which requires `+memory=api`.
-        """
-        config_path = self._repo_root() / "config" / "config.yaml"
-        try:
-            payload = config_path.read_text(encoding="utf-8")
-        except Exception:
-            return "+memory=api"
-
-        if re.search(r"^\s*-\s*(?:/)?memory\s*:\s*\S+", payload, flags=re.MULTILINE):
-            return "memory=api"
-        return "+memory=api"
-
     @staticmethod
     def _require_memory_api_url() -> str:
         memory_api_url = str(os.getenv("MEMORY_API_URL") or "").strip()
@@ -419,20 +401,22 @@ class GigaEvolveService:
                 "_convert_": "all",
                 "models": [
                     {
-                        "_target_": "langchain_openai.ChatOpenAI",
+                        "_target_": "common.llm_rate_limit.chat_openai",
                         "model": runtime.get("model"),
-                        "api_key": runtime.get("api_key"),
+                        "api_key": "${oc.env:LLM__API_KEY}",
                         "temperature": float(runtime.get("temperature", 0.7)),
                         "max_tokens": int(runtime.get("max_tokens", 2048)),
                         "top_p": float(runtime.get("top_p", 1.0)),
                         "base_url": runtime.get("base_url"),
                         "request_timeout": int(runtime.get("request_timeout", 600)),
-                        "max_retries": int(runtime.get("max_retries", 3)),
+                        "rate_limit_retries": int(runtime.get("max_retries", 2)),
                         "timeout": int(runtime.get("timeout", 600)),
                     }
                 ],
                 "probabilities": [1.0],
                 "writer": "${writer}",
+                "max_concurrent": max(1, int(os.getenv("LLM_MAX_CONCURRENT", "1"))),
+                "structured_output_method": runtime.get("structured_output_method") or "auto",
             }
         }
 
@@ -513,7 +497,11 @@ class GigaEvolveService:
                     cmd.append(f"max_mutants={pop * gens}")
 
             # Use custom.yaml so LLM__* environment variables are picked up
-            cmd.append("llm=custom")
+            concurrency = max(1, int(os.getenv("LLM_MAX_CONCURRENT", "1")))
+            cmd.extend((
+                "llm=custom", "memory=none",
+                f"max_in_flight={concurrency}", "max_consecutive_mutation_failures=3",
+            ))
 
             env = self._env_with_problem_dir(problem_dir)
             env.update(
@@ -524,6 +512,7 @@ class GigaEvolveService:
                     "GIGAEVO_REDIS_PORT": str(redis_port),
                     "GIGAEVO_REDIS_DB": str(redis_db),
                     "GIGAEVO_METRICS_PREFIX": str(problem_name),
+                    "CHAIN_MAX_CONCURRENT": str(concurrency),
                 }
             )
 
@@ -537,22 +526,18 @@ class GigaEvolveService:
 
             if config.get("enable_memory"):
                 namespace = self._resolve_memory_namespace(experiment_id, config)
-                checkpoint_dir = self._memory_checkpoint_dir(experiment_id)
-                checkpoint_dir.mkdir(parents=True, exist_ok=True)
                 self._configure_memory_env(env, namespace)
-                cmd.extend(
-                    [
-                        self._memory_hydra_override(),
-                        f"namespace={namespace}",
-                        f"checkpoint_dir={checkpoint_dir}",
-                    ]
-                )
-                logger.info(
-                    "Memory enabled for %s: namespace=%s checkpoint_dir=%s",
-                    experiment_id,
-                    namespace,
-                    checkpoint_dir,
-                )
+                if query := config.get("memory_query"):
+                    env["MEMORY_QUERY"] = query
+                cmd.extend((
+                    "pipeline=memory_guided",
+                    "memory.capabilities.read=true",
+                    "memory.provider._target_=common.ideal_memory.IdeaLMemoryProvider",
+                    "pipeline_builder.no_card_control_probability=0",
+                ))
+                logger.info("IdeaL retrieval enabled for %s in namespace %s", experiment_id, namespace)
+            else:
+                cmd.append("pipeline=guided")
 
             # Limit validation samples for chain experiments to speed up validation
             # Use max 2 samples for train and 1 for val to keep validation very fast
@@ -607,7 +592,6 @@ class GigaEvolveService:
                     "OPENAI_API_KEY": llm_api_key,
                 }
             )
-            os.environ["OPENAI_LOG"] = "debug"
 
             # SSL bypass
             if runtime.get("ssl_no_verify") or prompt_runtime.get("ssl_no_verify") or cfg.gigavolve.ssl_bypass_enabled:

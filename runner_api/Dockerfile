@@ -2,7 +2,7 @@
 
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS core-builder
 
-ARG GIGAEVO_CORE_REF=main
+ARG GIGAEVO_CORE_REF=2fccecc62481b4b9c5d4be9b2f1a6d2cf84769e4
 ARG GIGAEVO_CORE_REPO_URL=https://github.com/FusionBrainLab/gigaevo-core
 ARG GIGAEVO_CORE_STAGE_TIMEOUT=3600
 
@@ -173,12 +173,12 @@ COPY common/ ./common/
 # the single-source version at runtime (the package itself isn't installed).
 COPY pyproject.toml ./common/pyproject.toml
 
-COPY --from=core-builder /opt/gigaevo-core /opt/gigaevo-core
+COPY --from=core-builder --chown=1000:1000 /opt/gigaevo-core /opt/gigaevo-core
 COPY runner_api/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 RUN chmod +x /usr/local/bin/entrypoint.sh && \
     useradd -m -u 1000 gigaevouser && \
-    chown -R gigaevouser:gigaevouser /app /opt/gigaevo-core
+    chown -R gigaevouser:gigaevouser /app
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 

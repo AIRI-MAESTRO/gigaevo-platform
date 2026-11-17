@@ -2,7 +2,7 @@
 name = "gigaevo-platform"
 # Single source of truth for the platform version. Runtime code reads this
 # via `from common.version import __version__` (see common/version.py).
-version = "0.4.4"
+version = "0.4.5"
 description = "GigaEvo Platform - Machine Learning Experiment Management System"
 readme = "README.md"
 requires-python = ">=3.12"

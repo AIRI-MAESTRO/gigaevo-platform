@@ -47,7 +47,7 @@ main() {
     --file "${ROOT_DIR}/runner_api/Dockerfile"
     --target "${target}"
     --tag "${RUNNER_IMAGE_NAME}"
-    --build-arg "GIGAEVO_CORE_REF=${GIGAEVO_CORE_REF:-main}"
+    --build-arg "GIGAEVO_CORE_REF=${GIGAEVO_CORE_REF:-2fccecc62481b4b9c5d4be9b2f1a6d2cf84769e4}"
     --build-arg "GIGAEVO_CORE_REPO_URL=${GIGAEVO_CORE_REPO_URL:-https://github.com/FusionBrainLab/gigaevo-core}"
   )
 

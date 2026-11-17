@@ -253,6 +253,7 @@ async def create_prompt_experiment(
                 "validation_criteria": vc_dict,
                 "enable_memory": bool(getattr(prompt_experiment, "enable_memory", False)),
                 "memory_namespace": getattr(prompt_experiment, "memory_namespace", None),
+                "memory_query": prompt_experiment.memory_query,
             },
             llm_model=prompt_experiment.llm_model,
             prompt_llm_model=getattr(prompt_experiment, "prompt_llm_model", None),
@@ -295,6 +296,7 @@ async def create_prompt_experiment(
                     "test_size": prompt_experiment.test_size,
                     "enable_memory": bool(getattr(prompt_experiment, "enable_memory", False)),
                     "memory_namespace": getattr(prompt_experiment, "memory_namespace", None),
+                    "memory_query": prompt_experiment.memory_query,
                 }
                 await creation.create_prompt_experiment_files(experiment_id, prompt_spec, prompt_experiment.data_path)
         except Exception as e:
@@ -363,6 +365,7 @@ async def create_chain_experiment(
                 "ui_experiment_kind": "reasoning_chain",
                 "enable_memory": bool(getattr(chain_experiment, "enable_memory", False)),
                 "memory_namespace": getattr(chain_experiment, "memory_namespace", None),
+                "memory_query": chain_experiment.memory_query,
                 "population_size": chain_experiment.population_size,
                 "max_mutants": getattr(chain_experiment, "max_mutants", None),
             },
@@ -409,6 +412,7 @@ async def create_chain_experiment(
                     "step_number": getattr(chain_experiment, "step_number", None),
                     "enable_memory": bool(getattr(chain_experiment, "enable_memory", False)),
                     "memory_namespace": getattr(chain_experiment, "memory_namespace", None),
+                    "memory_query": chain_experiment.memory_query,
                 }
                 await creation.create_chain_experiment_files(experiment_id, chain_spec, chain_experiment.data_path)
         except Exception as e:
@@ -505,6 +509,7 @@ async def create_carl_chain_experiment(
             "feedback_template": getattr(carl_experiment, "feedback_template", "detailed") or "detailed",
             "enable_memory": bool(getattr(carl_experiment, "enable_memory", False)),
             "memory_namespace": getattr(carl_experiment, "memory_namespace", None),
+            "memory_query": carl_experiment.memory_query,
             "population_size": carl_experiment.population_size,
         }
         # Persist chain_llm_model so it can be forwarded to the runner later
@@ -561,6 +566,7 @@ async def create_carl_chain_experiment(
                     "validation_criteria": vc_dict,
                     "enable_memory": bool(getattr(carl_experiment, "enable_memory", False)),
                     "memory_namespace": getattr(carl_experiment, "memory_namespace", None),
+                    "memory_query": carl_experiment.memory_query,
                 }
                 await creation.create_chain_experiment_files(experiment_id, chain_spec, carl_experiment.data_path or "")
         except Exception as e:

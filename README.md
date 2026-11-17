@@ -51,6 +51,26 @@ GigaEvo Platform consists of three main components:
 
 GigaEvo platform reads all LLM settings from a single repo-level file: `llm_models.yml`. Create `llm_models.yml` from the `llm_models.yml.example` template and fill in your credentials.
 
+### MAESTRO public Quickstart
+
+Install the public stack with `uvx maestro-install@0.1.16 install --workspace ~/maestro-workspace`.
+Both Compose configurations pin a public MinIO release by digest. The runner builds
+against the public Core commit listed in `.env.example`.
+
+For an experiment that reads IdeaL, submit a chain to `POST /api/v1/experiments/chains`
+with `enable_memory: true`, an IdeaL `memory_namespace`, and optionally a short
+`memory_query`. Use the experiment namespace that contains your memory cards.
+The runner looks up cards using the public IdeaL search API and adds the selected
+cards to the mutation context. Set `MEMORY_API_KEY` for an authenticated IdeaL.
+For a smoke test, use a supported `tool` or `llm` seed, a small CSV, and
+`max_mutants: 2` to evaluate the seed and one generated candidate.
+
+Runner LLM calls default to one concurrent request per runner. You can configure
+`LLM_MAX_CONCURRENT` when the provider supports a higher rate. HTTP 429 retries
+respect `Retry-After` up to 120 seconds and use bounded exponential delays when the
+provider omits it. Configure `runtime.structured_output_method` in `llm_models.yml`
+for a provider that requires a specific structured-output mode.
+
 ### Using the Deployment System
 
 GigaEvo Platform uses the **deploy.sh** script with Docker Compose for service orchestration:

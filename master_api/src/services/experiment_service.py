@@ -856,6 +856,7 @@ class ExperimentService:
                 "test_size": experiment_model.config.get("test_size"),
                 "enable_memory": experiment_model.config.get("parameters", {}).get("enable_memory", False),
                 "memory_namespace": experiment_model.config.get("parameters", {}).get("memory_namespace"),
+                "memory_query": experiment_model.config.get("parameters", {}).get("memory_query"),
             }
 
             # Remove None values from config
