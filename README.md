@@ -70,6 +70,8 @@ Runner LLM calls default to one concurrent request per runner. You can configure
 respect `Retry-After` up to 120 seconds and use bounded exponential delays when the
 provider omits it. Configure `runtime.structured_output_method` in `llm_models.yml`
 for a provider that requires a specific structured-output mode.
+Pass provider-specific request fields under `runtime.extra_body` when needed,
+for example `thinking: {type: disabled}` for a short GLM smoke test.
 
 ### Using the Deployment System
 

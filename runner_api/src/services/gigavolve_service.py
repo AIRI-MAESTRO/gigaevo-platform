@@ -408,6 +408,7 @@ class GigaEvolveService:
                         "max_tokens": int(runtime.get("max_tokens", 2048)),
                         "top_p": float(runtime.get("top_p", 1.0)),
                         "base_url": runtime.get("base_url"),
+                        "extra_body": runtime.get("extra_body"),
                         "request_timeout": int(runtime.get("request_timeout", 600)),
                         "rate_limit_retries": int(runtime.get("max_retries", 2)),
                         "timeout": int(runtime.get("timeout", 600)),
