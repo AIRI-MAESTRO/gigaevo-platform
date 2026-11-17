@@ -499,7 +499,7 @@ class GigaEvolveService:
             # Use custom.yaml so LLM__* environment variables are picked up
             concurrency = max(1, int(os.getenv("LLM_MAX_CONCURRENT", "1")))
             cmd.extend((
-                "llm=custom", "memory=none",
+                "llm=custom", "memory=none", "storage=redis",
                 f"max_in_flight={concurrency}", "max_consecutive_mutation_failures=3",
             ))
 
