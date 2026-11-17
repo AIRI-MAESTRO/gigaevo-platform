@@ -127,3 +127,31 @@ def test_chain_validity_requires_a_successful_training_execution(tmp_path, monke
         {"chain_config_json": "{}"},
     )
     assert metrics["is_valid"] == float(executed)
+
+
+def test_chain_tools_load_from_problem_directory_outside_problem_cwd(tmp_path, monkeypatch):
+    import runpy
+    import sys
+    from pathlib import Path
+    from types import SimpleNamespace
+
+    template_dir = Path(__file__).parents[1] / "master_api/src/folder_constructor/validate_templates/chain"
+    # The directory lookup and tool loading do not depend on the evaluator's LLM or pandas.
+    chain_types = SimpleNamespace(
+        **dict.fromkeys(
+            ["ChainSpec", "LLMStep", "PromptBuilder", "RawChainSpec", "ToolStep"],
+            object,
+        )
+    )
+    monkeypatch.setitem(sys.modules, "chain_types", chain_types)
+    monkeypatch.setitem(sys.modules, "chain_client", SimpleNamespace(LLMClient=object, create_client_from_env=None))
+    monkeypatch.setitem(sys.modules, "chain_runner", SimpleNamespace(run_chain_on_dataset_stepwise=None))
+    monkeypatch.setitem(sys.modules, "pandas", SimpleNamespace())
+    problem = tmp_path / "problem"
+    problem.mkdir()
+    (problem / "custom_tools.py").write_text("def echo_color(message):\n    return message\n")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("PROBLEM_DIR", str(problem))
+    helper = runpy.run_path(str(template_dir / "helper.py"))
+    tools = helper["_load_custom_tools"](helper["_resolve_base_dir"]())
+    assert tools["echo_color"](message="blue") == "blue"

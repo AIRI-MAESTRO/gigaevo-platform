@@ -601,6 +601,10 @@ def _make_local_retrieve_tool(
 
 def _resolve_base_dir() -> str:
     """Find experiment base directory for resolving relative paths."""
+    problem_dir = os.getenv("PROBLEM_DIR")
+    if problem_dir and os.path.isdir(problem_dir):
+        return os.path.abspath(problem_dir)
+
     cwd = os.getcwd()
     for check in [
         os.path.join(cwd, "dataset", "data.csv"),
